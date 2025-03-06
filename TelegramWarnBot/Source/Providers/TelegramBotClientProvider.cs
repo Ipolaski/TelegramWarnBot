@@ -45,9 +45,16 @@ public class TelegramBotClientProvider : ITelegramBotClientProvider
         return client.DeleteMessageAsync(chatId, messageId, cancellationToken);
     }
 
+    /// <summary>
+    /// Бан пользователя на месяц
+    /// </summary>
+    /// <param name="chatId">Ид чата</param>
+    /// <param name="userId">Ид юзера</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public Task BanChatMemberAsync(ChatId chatId, long userId, CancellationToken cancellationToken = default)
     {
-        return client.BanChatMemberAsync(chatId, userId, cancellationToken: cancellationToken);
+        return client.BanChatMemberAsync(chatId, userId, DateTime.Now.AddMonths(1), cancellationToken: cancellationToken);
     }
 
     public Task UnbanChatMemberAsync(ChatId chatId, long userId, CancellationToken cancellationToken = default)
@@ -75,6 +82,7 @@ public class TelegramBotClientProvider : ITelegramBotClientProvider
         Func<ITelegramBotClient, Exception, CancellationToken, Task> pollingErrorHandler,
         CancellationToken cancellationToken = default)
     {
+        client.DeleteWebhookAsync();
         client.StartReceiving(updateHandler, pollingErrorHandler,
                               new ReceiverOptions
                               {

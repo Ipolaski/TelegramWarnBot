@@ -22,6 +22,7 @@ public class UpdateContext : IContext
     public bool IsChatRegistered { get; init; }
     public bool IsBotAdmin { get; init; }
     public bool IsSenderAdmin { get; init; }
+    public bool AllowPost { get; set; } = true;
 
     public bool ResolveAttributes(Type type)
     {

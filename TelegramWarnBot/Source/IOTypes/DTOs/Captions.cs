@@ -25,4 +25,5 @@ public class Captions
     public string WCountAdminAttempt { get; set; }
     public string WCountBotAttempt { get; set; }
     public string WCountBotSelfAttempt { get; set; }
+    public string OnlyOneFreeMessagePerAccount { get; set; }
 }

@@ -33,56 +33,74 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
 
     public override async Task<Task> Handle(UpdateContext context)
     {
-        foreach (var trigger in configurationContext.IllegalTriggers)
+        if ( !context.AllowPost )
         {
-            // Illegal triggers => ignore admins?
-            if (trigger.IgnoreAdmins && context.IsSenderAdmin)
-                continue;
+            await DeleteMessageAsync(context);
+            var chatWarning = commandService.ResolveChatWarning(context.ChatDTO.Id);
+            var warnedUser = commandService.ResolveWarnedUser(context.UserDTO.Id, chatWarning);
+            var isBanned = await commandService.Warn(warnedUser,
+                                                                 chatWarning.ChatId,
+                                                                 !context.IsSenderAdmin,
+                                                                 context);
 
-            // Applicable in specific chat
-            if (trigger.Chat is not null && trigger.Chat != context.ChatDTO.Id)
-                continue;
+            return responseHelper.SendMessageAsync(new ResponseContext
+            {
+                Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount,
+            }, context);
+        }
+        else
+        {
+            foreach ( var trigger in configurationContext.IllegalTriggers )
+            {
+                // Illegal triggers => ignore admins?
+                if ( trigger.IgnoreAdmins && context.IsSenderAdmin )
+                    continue;
 
-            if (!messageHelper.MatchMessage(trigger.IllegalWords, false, false, context.Text))
-                continue;
+                // Applicable in specific chat
+                if ( trigger.Chat is not null && trigger.Chat != context.ChatDTO.Id )
+                    continue;
 
-            logger.LogInformation("Message \"{message}\" from {user} in chat {chat} triggered a IllegalTrigger",
-                                  context.Text.Truncate(50),
-                                  context.UserDTO.GetName(),
-                                  context.ChatDTO.Name);
+                if ( !messageHelper.MatchMessage(trigger.IllegalWords, false, false, context.Text) )
+                    continue;
 
-            await NotifyAdminsAsync(context, trigger);
+                logger.LogInformation("Message \"{message}\" from {user} in chat {chat} triggered a IllegalTrigger",
+                                      context.Text.Truncate(50),
+                                      context.UserDTO.GetName(),
+                                      context.ChatDTO.Name);
 
-            if (trigger.DeleteMessage)
-                await DeleteMessageAsync(context);
+                await NotifyAdminsAsync(context, trigger);
 
-            cachedDataContext.Illegal.Add(new DeletedMessageLog { User = context.UserDTO.GetName(), Message = context.Text, Time = DateTime.Now });
+                if ( trigger.DeleteMessage )
+                    await DeleteMessageAsync(context);
 
-            // Notify but don't warn admins and don't delete message if not allowed in config
-            if (trigger.WarnMember)
-                if (!context.IsSenderAdmin || configurationContext.Configuration.AllowAdminWarnings)
-                {
-                    var chatWarning = commandService.ResolveChatWarning(context.ChatDTO.Id);
-                    var warnedUser = commandService.ResolveWarnedUser(context.UserDTO.Id, chatWarning);
+                cachedDataContext.Illegal.Add(new DeletedMessageLog { User = context.UserDTO.GetName(), Message = context.Text, Time = DateTime.Now });
 
-                    var isBanned = await commandService.Warn(warnedUser,
-                                                             chatWarning.ChatId,
-                                                             !context.IsSenderAdmin,
-                                                             context);
-
-                    LogWarned(isBanned, context.ChatDTO, warnedUser);
-
-                    return responseHelper.SendMessageAsync(new ResponseContext
+                // Notify but don't warn admins and don't delete message if not allowed in config
+                if ( trigger.WarnMember )
+                    if ( !context.IsSenderAdmin || configurationContext.Configuration.AllowAdminWarnings )
                     {
-                        Message = isBanned
-                            ? configurationContext.Configuration.Captions.IllegalTriggerBanned
-                            : configurationContext.Configuration.Captions.IllegalTriggerWarned,
-                        MentionedUserId = warnedUser.Id
-                    }, context);
-                }
+                        var chatWarning = commandService.ResolveChatWarning(context.ChatDTO.Id);
+                        var warnedUser = commandService.ResolveWarnedUser(context.UserDTO.Id, chatWarning);
 
-            // Match only 1 trigger
-            return next(context);
+                        var isBanned = await commandService.Warn(warnedUser,
+                                                                 chatWarning.ChatId,
+                                                                 !context.IsSenderAdmin,
+                                                                 context);
+
+                        LogWarned(isBanned, context.ChatDTO, warnedUser);
+
+                        return responseHelper.SendMessageAsync(new ResponseContext
+                        {
+                            Message = isBanned
+                                ? configurationContext.Configuration.Captions.IllegalTriggerBanned
+                                : configurationContext.Configuration.Captions.IllegalTriggerWarned,
+                            MentionedUserId = warnedUser.Id
+                        }, context);
+                    }
+
+                // Match only 1 trigger
+                return next(context);
+            }
         }
 
         return next(context);

@@ -35,9 +35,9 @@ public class CommandService : ICommandService
     }
 
     /// <summary>
-    ///     WarnedUser should not be an admin
+    /// Выдача предупреждений всем, кроме админов и автобан, если предупреждения доходят до порогового значения "MaxWarnings"
     /// </summary>
-    /// <returns>Whether user is banned from chat</returns>
+    /// <returns>Был ли забанен пользователь</returns>
     public async Task<bool> Warn(WarnedUser warnedUser, long chatId, bool tryBanUser, UpdateContext context)
     {
         warnedUser.Warnings = Math.Clamp(warnedUser.Warnings + 1, 0,
@@ -53,6 +53,7 @@ public class CommandService : ICommandService
         {
             await telegramBotClientProvider.BanChatMemberAsync(chatId, warnedUser.Id,
                                                                context.CancellationToken);
+            warnedUser.Warnings = 0;
             return true;
         }
 
