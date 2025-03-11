@@ -6,6 +6,7 @@ public class UserDTO
 
     private string firstName;
     public string Username { get; set; }
+    public bool WriteAllow { get; set; }
 
     public string FirstName
     {

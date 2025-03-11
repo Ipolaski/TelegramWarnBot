@@ -33,7 +33,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
 
     public override async Task<Task> Handle(UpdateContext context)
     {
-        if ( !context.AllowPost )
+        if ( !context.AllowPost && !context.IsSenderAdmin && !context.UserDTO.WriteAllow)
         {
             await DeleteMessageAsync(context);
             var chatWarning = commandService.ResolveChatWarning(context.ChatDTO.Id);
@@ -45,7 +45,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
 
             return responseHelper.SendMessageAsync(new ResponseContext
             {
-                Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount,
+                Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1",$"{context.UserDTO.Username}"),
             }, context);
         }
         else

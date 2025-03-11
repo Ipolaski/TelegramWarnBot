@@ -13,6 +13,11 @@ public interface ICommandService
                                      [NotNullWhen(true)] out WarnedUser warnedUser,
                                      [NotNullWhen(false)] out string errorMessage);
 
+    public bool TryResolveAllowUser(UpdateContext context,
+                                     bool isAllow,
+                                     [NotNullWhen(true)] out WarnedUser warnedUser,
+                                     [NotNullWhen(false)] out string errorMessage);
+
     Task<bool> Warn(WarnedUser warnedUser, long chatId, bool tryBanUser, UpdateContext context);
 }
 
@@ -120,6 +125,73 @@ public class CommandService : ICommandService
 
         return true;
     }
+
+
+    /// <returns>
+    ///     Разрешение или запрет бесконечного ввода сообщений
+    /// </returns>
+    public bool TryResolveAllowUser(UpdateContext context,
+                                     bool isAllow,
+                                     [NotNullWhen(true)] out WarnedUser warnedUser,
+                                     [NotNullWhen(false)] out string errorMessage)
+    {
+        warnedUser = null;
+        errorMessage = null;
+
+        if (!context.IsSenderAdmin)
+        {
+            errorMessage = configurationContext.Configuration.Captions.UserNoPermissions;
+            return false;
+        }
+
+        if (!context.IsBotAdmin)
+        {
+            errorMessage = configurationContext.Configuration.Captions.BotHasNoPermissions;
+            return false;
+        }
+
+        var resolveUser = TryResolveMentionedUser(context, out var mentionedUser);
+
+        // Didn't find the user => return reason 
+        if (resolveUser != ResolveMentionedUserResult.Resolved)
+        {
+            errorMessage = resolveUser switch
+            {
+                ResolveMentionedUserResult.UserNotMentioned => configurationContext.Configuration.Captions.InvalidOperation,
+                ResolveMentionedUserResult.UserNotFound => configurationContext.Configuration.Captions.UserNotFound,
+                ResolveMentionedUserResult.BotMention => isAllow
+                    ? configurationContext.Configuration.Captions.WarnBotAttempt
+                    : configurationContext.Configuration.Captions.UnwarnBotAttempt,
+                ResolveMentionedUserResult.BotSelfMention => isAllow
+                    ? configurationContext.Configuration.Captions.WarnBotSelfAttempt
+                    : configurationContext.Configuration.Captions.UnwarnBotSelfAttempt,
+                _ => throw new ArgumentException("ResolveMentionedUserResult")
+            };
+            return false;
+        }
+
+        var mentionedUserIsAdmin = chatHelper.IsAdmin(context.Update.Message.Chat.Id, mentionedUser.Id);
+
+        // warn/unwarn admin disabled
+        if (mentionedUserIsAdmin && !configurationContext.Configuration.AllowAdminWarnings)
+        {
+            errorMessage = isAllow
+                ? configurationContext.Configuration.Captions.WarnAdminAttempt
+                : configurationContext.Configuration.Captions.UnwarnAdminAttempt;
+            return false;
+        }
+        //mentionedUser.WriteAllow = isAllow;
+
+        cachedDataContext.Users.Find(a => a.Username == mentionedUser.Username).WriteAllow = isAllow;
+
+        cachedDataContext.SaveData();
+
+        var chatWarnings = ResolveChatWarning(context.Update.Message.Chat.Id);
+        warnedUser = ResolveWarnedUser(mentionedUser.Id, chatWarnings);
+
+        return true;
+    }
+
 
     public WarnedUser ResolveWarnedUser(long userId, ChatWarnings chatWarning)
     {

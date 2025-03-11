@@ -27,6 +27,8 @@ public class MockedConfigurationContext : IConfigurationContext
             BotHasNoPermissions = "BotHasNoPermissions",
             InvalidOperation = "InvalidOperation",
             UserNotFound = "UserNotFound",
+            AllowWriteSuccessfully = "AllowWriteSuccessfully",
+            UnallowWriteSuccessfully = "UnallowWriteSuccessfully",
             WarnedSuccessfully = "WarnedSuccessfully",
             UnwarnedSuccessfully = "UnwarnedSuccessfully",
             BannedSuccessfully = "BannedSuccessfully",

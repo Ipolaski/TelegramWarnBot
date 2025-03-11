@@ -8,6 +8,8 @@ public class Captions
     public string BotHasNoPermissions { get; set; }
     public string InvalidOperation { get; set; }
     public string UserNotFound { get; set; }
+    public string AllowWriteSuccessfully { get; set; }
+    public string UnallowWriteSuccessfully { get; set; }
     public string WarnedSuccessfully { get; set; }
     public string UnwarnedSuccessfully { get; set; }
     public string BannedSuccessfully { get; set; }

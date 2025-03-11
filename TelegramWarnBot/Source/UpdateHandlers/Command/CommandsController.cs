@@ -2,6 +2,8 @@
 
 public interface ICommandsController
 {
+    Task<Task> AllowWrite(UpdateContext context);
+    Task<Task> UnallowWrite(UpdateContext context);
     Task<Task> Unwarn(UpdateContext context);
     Task<Task> Warn(UpdateContext context);
     Task WCount(UpdateContext context);
@@ -32,6 +34,57 @@ public class CommandsController : ICommandsController
         this.responseHelper = responseHelper;
         this.commandService = commandService;
         this.logger = logger;
+    }
+
+    public async Task<Task> AllowWrite(UpdateContext context)
+    {
+        if (!commandService.TryResolveAllowUser(context, true, out var warnedUser, out var errorMessage))
+            return responseHelper.SendMessageAsync(new ResponseContext
+            {
+                Message = errorMessage
+            }, context);
+
+        if (configurationContext.Configuration.DeleteWarnMessage)
+            await responseHelper.DeleteMessageAsync(context);
+
+        // Notify in chat that user has been warned or banned
+        return responseHelper.SendMessageAsync(new ResponseContext
+        {
+            Message =
+                configurationContext.Configuration.Captions.AllowWriteSuccessfully,
+            MentionedUserId = warnedUser.Id
+        }, context);
+    }
+
+    public async Task<Task> UnallowWrite(UpdateContext context)
+    {
+        if (!commandService.TryResolveAllowUser(context, false, out var unwarnedUser, out var errorMessage))
+            return responseHelper.SendMessageAsync(new ResponseContext
+            {
+                Message = errorMessage
+            }, context);
+
+        if (configurationContext.Configuration.DeleteWarnMessage)
+            await responseHelper.DeleteMessageAsync(context);
+
+        unwarnedUser.Warnings = 0;
+
+        await telegramBotClientProvider.UnbanChatMemberAsync(context.Update.Message.Chat.Id,
+                                                             unwarnedUser.Id,
+                                                             context.CancellationToken);
+
+        logger.LogInformation("[Admin] {admin} unallow write no limit message user {user} in chat {chat}. Warnings: {currentWarns} / {maxWarns}",
+                              context.UserDTO.GetName(),
+                              cachedDataContext.FindUserById(unwarnedUser.Id).GetName(),
+                              context.ChatDTO.Name,
+                              unwarnedUser.Warnings,
+                              configurationContext.Configuration.MaxWarnings);
+
+        return responseHelper.SendMessageAsync(new ResponseContext
+        {
+            Message = configurationContext.Configuration.Captions.UnallowWriteSuccessfully,
+            MentionedUserId = unwarnedUser.Id
+        }, context);
     }
 
     public async Task<Task> Warn(UpdateContext context)

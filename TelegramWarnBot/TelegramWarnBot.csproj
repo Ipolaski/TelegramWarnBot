@@ -9,17 +9,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Remove="Bot.json"/>
-        <None Remove="Configuration\IllegalTriggers.json"/>
-        <None Remove="Configuration\RegisteredChats.json"/>
-        <None Remove="Configuration\Triggers.json"/>
-        <None Remove="Data\Chats.json"/>
-        <None Remove="Data\ChatWarnings.json"/>
-        <None Remove="Data\Configuration.json"/>
-        <None Remove="Data\Illegal.json"/>
-        <None Remove="Data\Logs.json"/>
-        <None Remove="Data\Spam.json"/>
-        <None Remove="Data\Users.json"/>
+        <None Remove="Bot.json" />
+        <None Remove="Configuration\IllegalTriggers.json" />
+        <None Remove="Configuration\RegisteredChats.json" />
+        <None Remove="Configuration\Triggers.json" />
+        <None Remove="Data\Chats.json" />
+        <None Remove="Data\ChatWarnings.json" />
+        <None Remove="Data\Configuration.json" />
+        <None Remove="Data\Illegal.json" />
+        <None Remove="Data\Logs.json" />
+        <None Remove="Data\Spam.json" />
+        <None Remove="Data\Users.json" />
         <None Remove="appsettings.Windows.json" />
         <None Remove="appsettings.Linux.json" />
     </ItemGroup>
