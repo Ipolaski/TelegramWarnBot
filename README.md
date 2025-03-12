@@ -77,9 +77,9 @@ You can change them at runtime and then use `reload` in console to reload new co
   - [WCountAdminAttempt](TelegramWarnBot/Configuration/Configuration.json#L30): Attempt to use */wcount* on administrator when *AllowAdminWarnings = false*.
   - [WCountBotAttempt](TelegramWarnBot/Configuration/Configuration.json#L31): Attempt to use */wcount* on *another bot*.
   - [WCountBotSelfAttempt](TelegramWarnBot/Configuration/Configuration.json#L32): Attempt to use */wcount* on the *bot itself*.
-  - [AllowWriteSuccessfully](TelegramWarnBot/Configuration/Configuration.json#L22): Attempt to use */allowWrite* on *any user*. Команда для отключения лимита сообщений для пользователя.
-  - [UnallowWriteSuccessfully](TelegramWarnBot/Configuration/Configuration.json#L23): Attempt to use */unallowWrite* on *any user*. Команда для включения лимита сообщений для пользователя.
-
+  - [AllowWriteSuccessfully](TelegramWarnBot/Configuration/Configuration.json#L22): Attempt to use */allowWrite* on *any user*. РљРѕРјР°РЅРґР° РґР»СЏ РѕС‚РєР»СЋС‡РµРЅРёСЏ Р»РёРјРёС‚Р° СЃРѕРѕР±С‰РµРЅРёР№ РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
+  - [UnallowWriteSuccessfully](TelegramWarnBot/Configuration/Configuration.json#L23): Attempt to use */unallowWrite* on *any user*. РљРѕРјР°РЅРґР° РґР»СЏ РІРєР»СЋС‡РµРЅРёСЏ Р»РёРјРёС‚Р° СЃРѕРѕР±С‰РµРЅРёР№ РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
+  
 ### [Triggers](TelegramWarnBot/Configuration/Triggers.json)
 
 Messages that will trigger the bot and send a response to corresponding chat with a triggered message attached in **reply** of response message.
