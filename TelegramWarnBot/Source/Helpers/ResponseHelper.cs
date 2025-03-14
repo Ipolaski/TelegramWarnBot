@@ -33,14 +33,16 @@ public class ResponseHelper : IResponseHelper
 		_deleteMessageTimer.AutoReset = true;
 		_deleteMessageTimer.Enabled = true;
 		_onDeleteQueue = new Queue<DeleteMessageModel>();
+		Log.Logger.Information( $"ResponseHelper сработал конструктор класса" );
 	}
 
     public async Task SendMessageAsync(ResponseContext responseContext, UpdateContext updateContext, int? replyToMessageId = null)
     {
-        Message message = await telegramBotClientProvider.SendMessageAsync( updateContext.ChatDTO.Id,
+		
+		Message message = await telegramBotClientProvider.SendMessageAsync( updateContext.ChatDTO.Id,
 														  FormatResponseVariables( responseContext, updateContext ),
 														  replyToMessageId,
-														  updateContext.CancellationToken );
+														  updateContext.CancellationToken );		
 		MarkOnDeleteMrssage( message );
 	}
 
@@ -87,19 +89,23 @@ public class ResponseHelper : IResponseHelper
     }
 	private async Task ProcessDeleteMessage( object obj, ElapsedEventArgs e )
 	{
+        Log.Logger.Information("Сработал метод удаления сообщения");
 		while ( true )
 		{
 			if ( _onDeleteQueue == null || _onDeleteQueue.Count == 0 )
 			{
-                break;
+				Log.Logger.Information( $"Пустое Queue. COUNT {_onDeleteQueue.Count}" );
+				break;
 			}
 			DeleteMessageModel deleteMessageModel = _onDeleteQueue.Peek();
-			if ( deleteMessageModel.messageDate > DateTime.Now + TimeSpan.FromSeconds( configurationContext.Configuration.TimeToAliveMessageInSeconds ) )
+			Log.Logger.Information( $"время сообщения: {deleteMessageModel.messageDate} время: {DateTime.Now}" );
+			if ( deleteMessageModel.messageDate + TimeSpan.FromSeconds( configurationContext.Configuration.TimeToAliveMessageInSeconds ) < DateTime.Now  )
 			{
+                Log.Logger.Information( $"удаление messageId {deleteMessageModel.MessageId!.Value}, ChatId: {deleteMessageModel.ChatId} " );
 				await telegramBotClientProvider.DeleteMessageAsync( deleteMessageModel.ChatId,
 															deleteMessageModel.MessageId!.Value,
 															new CancellationToken() );
-				_onDeleteQueue.Dequeue();
+				DeleteMessageModel x = _onDeleteQueue.Dequeue();
 			}
 			else
 			{
@@ -112,13 +118,15 @@ public class ResponseHelper : IResponseHelper
 	{
         if ( message.From.Username == configurationContext.Configuration.BOTUserName )
         {
+            Log.Logger.Information( $"добавление сообщения в  очередьна удаление MessageId: {message.MessageId} messageDate: {DateTime.Now} ChatId: {message.Chat.Id}" );
             var deleteMessageModel = new DeleteMessageModel()
             {
                 MessageId = message.MessageId,
-                messageDate = message.Date,
+                messageDate = DateTime.Now,
                 ChatId = message.Chat.Id
             };
             _onDeleteQueue.Enqueue( deleteMessageModel );
-        }
+			Log.Logger.Information( $"Пустое Queue  . COUNT {_onDeleteQueue.Count}" );
+		}
     }
 }
