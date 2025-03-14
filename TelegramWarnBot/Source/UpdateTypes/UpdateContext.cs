@@ -27,15 +27,23 @@ public class UpdateContext : IContext
     public bool ResolveAttributes(Type type)
     {
         var allowed = true;
+        if (type != null)
+            try
+            {
+                if (type.CustomAttributes.Any(a => a.AttributeType == typeof(RegisteredChatAttribute)))
+                    allowed = IsChatRegistered;
 
-        if (type.CustomAttributes.Any(a => a.AttributeType == typeof(RegisteredChatAttribute)))
-            allowed = IsChatRegistered;
+                if (Update.Message?.Type != null)
+                    if (allowed && type.CustomAttributes.Any(a => a.AttributeType == typeof(TextMessageUpdateAttribute)))
+                        allowed = IsText || Update.Message.Type == MessageType.Photo || Update.Message.Type == MessageType.Video;
 
-        if (allowed && type.CustomAttributes.Any(a => a.AttributeType == typeof(TextMessageUpdateAttribute)))
-            allowed = IsText;
-
-        if (allowed && type.CustomAttributes.Any(a => a.AttributeType == typeof(BotAdminAttribute)))
-            allowed = IsBotAdmin;
+                if (allowed && type.CustomAttributes.Any(a => a.AttributeType == typeof(BotAdminAttribute)))
+                    allowed = IsBotAdmin;
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"Ошибка: {ex.Message}");
+            }
 
         return allowed;
     }

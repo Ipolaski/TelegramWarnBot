@@ -33,7 +33,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
 
     public override async Task<Task> Handle(UpdateContext context)
     {
-        if ( !context.AllowPost && !context.IsSenderAdmin && !context.UserDTO.WriteAllow)
+        if ( !context.AllowPost && !context.IsSenderAdmin && !context.UserDTO.WriteAllow && (context.Update.Message.Type == MessageType.Video || context.Update.Message.Type == MessageType.Photo))
         {
             await DeleteMessageAsync(context);
             var chatWarning = commandService.ResolveChatWarning(context.ChatDTO.Id);
@@ -45,7 +45,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
 
             return responseHelper.SendMessageAsync(new ResponseContext
             {
-                Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1",$"{context.UserDTO.Username}"),
+                Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1",$"{context.UserDTO.FirstName} {context.UserDTO.LastName}"),
             }, context);
         }
         else
@@ -68,7 +68,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
                                       context.UserDTO.GetName(),
                                       context.ChatDTO.Name);
 
-                await NotifyAdminsAsync(context, trigger);
+                //await NotifyAdminsAsync(context, trigger);
 
                 if ( trigger.DeleteMessage )
                     await DeleteMessageAsync(context);

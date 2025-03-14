@@ -55,13 +55,17 @@ public class PipeBuilder<TContext>
         {
             var child = CreatePipe(index + 1);
             var pipe = (Pipe<TContext>)Activator.CreateInstance(pipes[index].Type, ResolveDependencies(child, pipes[index].Type))!;
-            return context =>
+            try
             {
-                if (context.ResolveAttributes(pipes[index].Type) && pipes[index].ExecutionFilter(context))
-                    return pipe.Handle(context);
+                return context =>
+                {
+                    if (context.ResolveAttributes(pipes[index].Type) && pipes[index].ExecutionFilter(context))
+                        return pipe.Handle(context);
 
-                return child(context);
-            };
+                    return child(context);
+                };
+            }
+            catch { };
         }
 
         var finalPipe = (Pipe<TContext>)Activator.CreateInstance(pipes[index].Type, ResolveDependencies(mainAction, pipes[index].Type))!;

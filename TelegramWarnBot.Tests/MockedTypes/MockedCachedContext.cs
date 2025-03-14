@@ -132,4 +132,9 @@ public class MockedCachedContext : ICachedDataContext
     {
         return Warnings.Find(w => w.ChatId == chatId);
     }
+
+    public void UnmuteWarnUsers()
+    {
+        throw new NotImplementedException();
+    }
 }

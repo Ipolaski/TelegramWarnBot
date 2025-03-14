@@ -30,21 +30,23 @@ public class TriggersHandler : Pipe<UpdateContext>
 
             if (messageHelper.MatchMessage(trigger.Messages, trigger.MatchWholeMessage, trigger.MatchCase, context.Text))
             {
-                // Get random response
-                var response = trigger.Responses[Random.Shared.Next(trigger.Responses.Length)];
+                //string response = string.Empty;
+                //if (trigger.Responses.Length != 0)
+                //    // Get random response
+                //    response = trigger.Responses[Random.Shared.Next(trigger.Responses.Length)];
 
-                await responseHelper.SendMessageAsync(new ResponseContext
-                {
-                    Message = response
-                }, context, context.MessageId);
+                //await responseHelper.SendMessageAsync(new ResponseContext
+                //{
+                //    Message = response
+                //}, context, context.MessageId);
 
-                logger.LogInformation("Message \"{message}\" from {user} in chat {chat} triggered a Trigger. Bot responded with:\"{response}\"",
-                                      context.Text.Truncate(50),
-                                      context.UserDTO.GetName(),
-                                      context.ChatDTO.Name,
-                                      response.Truncate(50));
+                //logger.LogInformation("Message \"{message}\" from {user} in chat {chat} triggered a Trigger. Bot responded with:\"{response}\"",
+                //                      context.Text.Truncate(50),
+                //                      context.UserDTO.GetName(),
+                //                      context.ChatDTO.Name,
+                //                      response.Truncate(50));
 
-                // Match only 1 trigger
+                //// Match only 1 trigger
                 return next(context);
             }
         }

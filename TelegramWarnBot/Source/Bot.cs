@@ -20,7 +20,7 @@ public class Bot : IBot
     private readonly IStatsController statsController;
     private List<long> cachedUsers = new();
     private Func<UpdateContext, Task> pipe;
-
+    private Timer _timerUnmuteUsers;
     public Bot(IServiceProvider serviceProvider,
                ITelegramBotClientProvider telegramBotClientProvider,
                IConfigurationContext configurationContext,
@@ -60,17 +60,14 @@ public class Bot : IBot
         logger.LogInformation("Version: {version}", Assembly.GetEntryAssembly()!.GetName().Version);
 
         Console.Title = BotUser.FirstName;
-        
-        Thread cachedDataReset = new Thread(() =>
+
+        TimerCallback tm = new TimerCallback((o) =>
         {
-            while ( true )
-            {
-                if ( DateTime.Now.Hour == 0 && DateTime.Now.Minute == 0 )
-                    cachedUsers.Clear();
-                Thread.Sleep(60000);
-            }
+            cachedUsers.Clear();
+            cachedDataContext.UnmuteWarnUsers();
         });
-        cachedDataReset.Start();
+
+        _timerUnmuteUsers = new Timer(tm, null, TimeSpan.FromMinutes(configurationContext.Configuration.UpdateDelay), TimeSpan.FromMinutes(configurationContext.Configuration.UpdateDelay));
     }
 
     public Task UpdateHandler(ITelegramBotClient client, Update update, CancellationToken cancellationToken)
@@ -78,33 +75,35 @@ public class Bot : IBot
         try
         {
             // Update must be a valid message with a From-user
-            if ( !update.Validate() )
+            if (!update.Validate())
                 return Task.CompletedTask;
 
             var context = updateContextBuilder.Build(update, BotUser, cancellationToken);
 
             //if ( !context.IsJoinedLeftUpdate && context.ChatDTO is null )
             //    throw new Exception("Message from uncached chat!");
-            if ( context.Update.Message != null )
+            if (context.Update.Message != null)
             {
                 context.AllowPost = !cachedUsers.Contains(context.Update.Message.From.Id);
 
-                if ( context.AllowPost )
+                if (context.AllowPost)
                     try
                     {
                         cachedUsers.Add(context.Update.Message.From.Id);
                     }
-                    catch ( Exception e )
+                    catch (Exception e)
                     {
+                        var chat = context.Update.GetChat();
+                        logger.LogError(e, $"Handler error on update {update} in chat {chat}", update, $"{chat?.Title}: {chat?.Id}, messagge: {update.Message}");
                     }
             }
             return pipe(context);
         }
-        catch ( Exception exception )
+        catch (Exception exception)
         {
             var chat = update.GetChat();
             // Update that raised exception will be saved in Logs.json (and sent to tech support in private messages)
-            logger.LogError(exception, "Handler error on update {@update} in chat {chat}", update, $"{chat?.Title}: {chat?.Id}");
+            logger.LogError(exception, $"Handler error on update {update} in chat {chat}", update, $"{chat?.Title}: {chat?.Id}, messagge: {update.Message}");
             return Task.CompletedTask;
         }
     }
