@@ -10,5 +10,8 @@ public class Configuration
     public bool DeleteLinksFromNewMembers { get; set; }
     public int NewMemberStatusFromHours { get; set; }
     public bool AllowAdminWarnings { get; set; }
+    public string BOTUserName { get; set; }
+    public int DeleteBotMessageTimeOutInSeconds { get; set; }
+    public int TimeToAliveMessageInSeconds { get; set; }
     public Captions Captions { get; set; }
 }

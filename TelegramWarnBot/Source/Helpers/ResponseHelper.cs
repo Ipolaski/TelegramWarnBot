@@ -1,4 +1,7 @@
-﻿namespace TelegramWarnBot;
+﻿using System.Timers;
+using TelegramWarnBot.Source.IOTypes.DTOs;
+
+namespace TelegramWarnBot;
 
 public interface IResponseHelper
 {
@@ -13,7 +16,9 @@ public class ResponseHelper : IResponseHelper
     private readonly IConfigurationContext configurationContext;
     private readonly ISmartFormatterProvider formatterProvider;
     private readonly ITelegramBotClientProvider telegramBotClientProvider;
-
+	private readonly Queue<DeleteMessageModel> _onDeleteQueue;
+	private readonly System.Timers.Timer _deleteMessageTimer;
+	
     public ResponseHelper(ITelegramBotClientProvider telegramBotClientProvider,
                           IConfigurationContext configurationContext,
                           ICachedDataContext cachedDataContext,
@@ -23,15 +28,21 @@ public class ResponseHelper : IResponseHelper
         this.configurationContext = configurationContext;
         this.cachedDataContext = cachedDataContext;
         this.formatterProvider = formatterProvider;
-    }
+		_deleteMessageTimer = new System.Timers.Timer( TimeSpan.FromSeconds( configurationContext.Configuration.DeleteBotMessageTimeOutInSeconds ).TotalMilliseconds );
+		_deleteMessageTimer.Elapsed += async ( sender, e ) => await ProcessDeleteMessage( sender, e );
+		_deleteMessageTimer.AutoReset = true;
+		_deleteMessageTimer.Enabled = true;
+		_onDeleteQueue = new Queue<DeleteMessageModel>();
+	}
 
-    public Task SendMessageAsync(ResponseContext responseContext, UpdateContext updateContext, int? replyToMessageId = null)
+    public async Task SendMessageAsync(ResponseContext responseContext, UpdateContext updateContext, int? replyToMessageId = null)
     {
-        return telegramBotClientProvider.SendMessageAsync(updateContext.ChatDTO.Id,
-                                                          FormatResponseVariables(responseContext, updateContext),
-                                                          replyToMessageId,
-                                                          updateContext.CancellationToken);
-    }
+        Message message = await telegramBotClientProvider.SendMessageAsync( updateContext.ChatDTO.Id,
+														  FormatResponseVariables( responseContext, updateContext ),
+														  replyToMessageId,
+														  updateContext.CancellationToken );
+		MarkOnDeleteMrssage( message );
+	}
 
     public Task DeleteMessageAsync(UpdateContext context)
     {
@@ -73,5 +84,41 @@ public class ResponseHelper : IResponseHelper
             Username = user.Username,
             Warnings = warnedUser?.Warnings
         };
+    }
+	private async Task ProcessDeleteMessage( object obj, ElapsedEventArgs e )
+	{
+		while ( true )
+		{
+			if ( _onDeleteQueue == null || _onDeleteQueue.Count == 0 )
+			{
+                break;
+			}
+			DeleteMessageModel deleteMessageModel = _onDeleteQueue.Peek();
+			if ( deleteMessageModel.messageDate > DateTime.Now + TimeSpan.FromSeconds( configurationContext.Configuration.TimeToAliveMessageInSeconds ) )
+			{
+				await telegramBotClientProvider.DeleteMessageAsync( deleteMessageModel.ChatId,
+															deleteMessageModel.MessageId!.Value,
+															new CancellationToken() );
+				_onDeleteQueue.Dequeue();
+			}
+			else
+			{
+				break;
+			}
+		}
+    }
+
+	public async Task MarkOnDeleteMrssage( Message message )
+	{
+        if ( message.From.Username == configurationContext.Configuration.BOTUserName )
+        {
+            var deleteMessageModel = new DeleteMessageModel()
+            {
+                MessageId = message.MessageId,
+                messageDate = message.Date,
+                ChatId = message.Chat.Id
+            };
+            _onDeleteQueue.Enqueue( deleteMessageModel );
+        }
     }
 }
