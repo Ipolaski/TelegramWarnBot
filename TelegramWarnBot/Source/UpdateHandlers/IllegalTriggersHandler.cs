@@ -45,7 +45,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
 
             return responseHelper.SendMessageAsync(new ResponseContext
             {
-                Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1",$"{context.UserDTO.Username}"),
+                Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1",$"{context.UserDTO.FirstName} {context.UserDTO.LastName}"),
             }, context);
         }
         else
@@ -68,7 +68,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
                                       context.UserDTO.GetName(),
                                       context.ChatDTO.Name);
 
-                await NotifyAdminsAsync(context, trigger);
+                //await NotifyAdminsAsync(context, trigger);
 
                 if ( trigger.DeleteMessage )
                     await DeleteMessageAsync(context);
