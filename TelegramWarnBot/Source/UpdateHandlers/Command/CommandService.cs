@@ -48,6 +48,8 @@ public class CommandService : ICommandService
         warnedUser.Warnings = Math.Clamp(warnedUser.Warnings + 1, 0,
                                          configurationContext.Configuration.MaxWarnings);
 
+        warnedUser.Unmute = DateTime.Now.AddDays(configurationContext.Configuration.UnmuteUsersDelay);
+
         // If not reached max warnings 
         if (warnedUser.Warnings < configurationContext.Configuration.MaxWarnings)
             return false;

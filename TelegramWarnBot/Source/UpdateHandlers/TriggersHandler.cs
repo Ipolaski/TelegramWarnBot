@@ -30,8 +30,10 @@ public class TriggersHandler : Pipe<UpdateContext>
 
             if (messageHelper.MatchMessage(trigger.Messages, trigger.MatchWholeMessage, trigger.MatchCase, context.Text))
             {
-                // Get random response
-                var response = trigger.Responses[Random.Shared.Next(trigger.Responses.Length)];
+                string response = string.Empty;
+                if (trigger.Responses.Length != 0)
+                    // Get random response
+                    response = trigger.Responses[Random.Shared.Next(trigger.Responses.Length)];
 
                 await responseHelper.SendMessageAsync(new ResponseContext
                 {

@@ -1,4 +1,5 @@
 ﻿using System.Timers;
+
 using TelegramWarnBot.Source.IOTypes.DTOs;
 
 namespace TelegramWarnBot;
@@ -16,9 +17,9 @@ public class ResponseHelper : IResponseHelper
     private readonly IConfigurationContext configurationContext;
     private readonly ISmartFormatterProvider formatterProvider;
     private readonly ITelegramBotClientProvider telegramBotClientProvider;
-	private readonly Queue<DeleteMessageModel> _onDeleteQueue;
-	private readonly System.Timers.Timer _deleteMessageTimer;
-	
+    private readonly Queue<DeleteMessageModel> _onDeleteQueue;
+    private readonly System.Timers.Timer _deleteMessageTimer;
+
     public ResponseHelper(ITelegramBotClientProvider telegramBotClientProvider,
                           IConfigurationContext configurationContext,
                           ICachedDataContext cachedDataContext,
@@ -28,23 +29,28 @@ public class ResponseHelper : IResponseHelper
         this.configurationContext = configurationContext;
         this.cachedDataContext = cachedDataContext;
         this.formatterProvider = formatterProvider;
-		_deleteMessageTimer = new System.Timers.Timer( TimeSpan.FromSeconds( configurationContext.Configuration.DeleteBotMessageTimeOutInSeconds ).TotalMilliseconds );
-		_deleteMessageTimer.Elapsed += async ( sender, e ) => await ProcessDeleteMessage( sender, e );
-		_deleteMessageTimer.AutoReset = true;
-		_deleteMessageTimer.Enabled = true;
-		_onDeleteQueue = new Queue<DeleteMessageModel>();
-		//Log.Logger.Information( $"ResponseHelper сработал конструктор класса" );
-	}
+        _deleteMessageTimer = new System.Timers.Timer(TimeSpan.FromSeconds(configurationContext.Configuration.DeleteBotMessageTimeOutInSeconds).TotalMilliseconds);
+        _deleteMessageTimer.Elapsed += async (sender, e) => await ProcessDeleteMessage(sender, e);
+        _deleteMessageTimer.AutoReset = true;
+        _deleteMessageTimer.Enabled = true;
+        _onDeleteQueue = new Queue<DeleteMessageModel>();
+    }
 
     public async Task SendMessageAsync(ResponseContext responseContext, UpdateContext updateContext, int? replyToMessageId = null)
     {
-		
-		Message message = await telegramBotClientProvider.SendMessageAsync( updateContext.ChatDTO.Id,
-														  FormatResponseVariables( responseContext, updateContext ),
-														  replyToMessageId,
-														  updateContext.CancellationToken );		
-		MarkOnDeleteMrssage( message );
-	}
+        try
+        {
+            Message message = await telegramBotClientProvider.SendMessageAsync(updateContext.ChatDTO.Id,
+                                                              FormatResponseVariables(responseContext, updateContext),
+                                                              replyToMessageId,
+                                                              updateContext.CancellationToken);
+            await MarkOnDeleteMrssage(message);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Debug($"Error in ResponseHelper when try to reply on message: {ex}");
+        }
+    }
 
     public Task DeleteMessageAsync(UpdateContext context)
     {
@@ -67,10 +73,9 @@ public class ResponseHelper : IResponseHelper
 
     private MentionedUserDTO GetUserObject(long chatId, long? userId)
     {
-        if (userId is null)
-            return null;
-
-        var user = cachedDataContext.FindUserById(userId.Value);
+        UserDTO user = new();
+        if (userId is not null)
+            user = cachedDataContext.FindUserById(userId.Value);
 
         if (user is null)
             return null;
@@ -87,46 +92,44 @@ public class ResponseHelper : IResponseHelper
             Warnings = warnedUser?.Warnings
         };
     }
-	private async Task ProcessDeleteMessage( object obj, ElapsedEventArgs e )
-	{
-        //Log.Logger.Information("Сработал метод удаления сообщения");
-		while ( true )
-		{
-			if ( _onDeleteQueue == null || _onDeleteQueue.Count == 0 )
-			{
-				//Log.Logger.Information( $"Пустое Queue. COUNT {_onDeleteQueue.Count}" );
-				break;
-			}
-			DeleteMessageModel deleteMessageModel = _onDeleteQueue.Peek();
-			Log.Logger.Information( $"время сообщения: {deleteMessageModel.messageDate} время: {DateTime.Now}" );
-			if ( deleteMessageModel.messageDate + TimeSpan.FromSeconds( configurationContext.Configuration.TimeToAliveMessageInSeconds ) < DateTime.Now  )
-			{
-                Log.Logger.Information( $"удаление messageId {deleteMessageModel.MessageId!.Value}, ChatId: {deleteMessageModel.ChatId} " );
-				await telegramBotClientProvider.DeleteMessageAsync( deleteMessageModel.ChatId,
-															deleteMessageModel.MessageId!.Value,
-															new CancellationToken() );
-				DeleteMessageModel x = _onDeleteQueue.Dequeue();
-			}
-			else
-			{
-				break;
-			}
-		}
+    private async Task ProcessDeleteMessage(object obj, ElapsedEventArgs e)
+    {
+        while (true)
+        {
+            if (_onDeleteQueue == null || _onDeleteQueue.Count == 0)
+            {
+                break;
+            }
+            DeleteMessageModel deleteMessageModel = _onDeleteQueue.Peek();
+            Log.Logger.Information($"время сообщения: {deleteMessageModel.messageDate} время: {DateTime.Now}");
+            if (deleteMessageModel.messageDate + TimeSpan.FromSeconds(configurationContext.Configuration.TimeToAliveMessageInSeconds) < DateTime.Now)
+            {
+                Log.Logger.Information($"удаление messageId {deleteMessageModel.MessageId!.Value}, ChatId: {deleteMessageModel.ChatId} ");
+                await telegramBotClientProvider.DeleteMessageAsync(deleteMessageModel.ChatId,
+                                                            deleteMessageModel.MessageId!.Value,
+                                                            new CancellationToken());
+                DeleteMessageModel x = _onDeleteQueue.Dequeue();
+            }
+            else
+            {
+                break;
+            }
+        }
     }
 
-	public async Task MarkOnDeleteMrssage( Message message )
-	{
-        if ( message.From.Username == configurationContext.Configuration.BOTUserName )
+    public async Task MarkOnDeleteMrssage(Message message)
+    {
+        if (message.From.Username == configurationContext.Configuration.BOTUserName)
         {
-            Log.Logger.Information( $"добавление сообщения в  очередьна удаление MessageId: {message.MessageId} messageDate: {DateTime.Now} ChatId: {message.Chat.Id}" );
+            Log.Logger.Information($"добавление сообщения в  очередь на удаление MessageId: {message.MessageId} messageDate: {DateTime.Now} ChatId: {message.Chat.Id}");
             var deleteMessageModel = new DeleteMessageModel()
             {
                 MessageId = message.MessageId,
                 messageDate = DateTime.Now,
                 ChatId = message.Chat.Id
             };
-            _onDeleteQueue.Enqueue( deleteMessageModel );
-			Log.Logger.Information( $"Пустое Queue  . COUNT {_onDeleteQueue.Count}" );
-		}
+            _onDeleteQueue.Enqueue(deleteMessageModel);
+            Log.Logger.Information($"Пустое Queue  . COUNT {_onDeleteQueue.Count}");
+        }
     }
 }

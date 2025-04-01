@@ -1,5 +1,6 @@
 ﻿{
     "UpdateDelay": 60,
+    "UnmuteUsersDelay": 2,
     "StatsDelay": 1,
     "MaxWarnings": 3,
     "DeleteWarnMessage": false,
@@ -9,7 +10,7 @@
     "AllowAdminWarnings": true,
     "BOTUserName": "korall56_bot",
     "DeleteBotMessageTimeOutInSeconds": 60,
-    "TimeToAliveMessageInSeconds" : 60 ,
+    "TimeToAliveMessageInSeconds": 60,
     "Captions": {
         "OnBotJoinedChatMessage": "👋 Hello there!\nPlease dial @robin\\\\_thicke to register this chat...",
         "ChatNotRegistered": "☠️ This chat is not registered...\nPlease dial @robin\\\\_thicke for more info...",

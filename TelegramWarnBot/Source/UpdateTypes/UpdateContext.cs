@@ -32,7 +32,7 @@ public class UpdateContext : IContext
             allowed = IsChatRegistered;
 
         if (allowed && type.CustomAttributes.Any(a => a.AttributeType == typeof(TextMessageUpdateAttribute)))
-            allowed = IsText;
+            allowed = IsText || Update.Message.Type == MessageType.Photo || Update.Message.Type == MessageType.Video;
 
         if (allowed && type.CustomAttributes.Any(a => a.AttributeType == typeof(BotAdminAttribute)))
             allowed = IsBotAdmin;

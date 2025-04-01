@@ -20,7 +20,7 @@ public class Bot : IBot
     private readonly IStatsController statsController;
     private List<long> cachedUsers = new();
     private Func<UpdateContext, Task> pipe;
-
+    private Timer _timerUnmuteUsers;
     public Bot(IServiceProvider serviceProvider,
                ITelegramBotClientProvider telegramBotClientProvider,
                IConfigurationContext configurationContext,
@@ -60,17 +60,13 @@ public class Bot : IBot
         logger.LogInformation("Version: {version}", Assembly.GetEntryAssembly()!.GetName().Version);
 
         Console.Title = BotUser.FirstName;
-        
-        Thread cachedDataReset = new Thread(() =>
-        {
-            while ( true )
-            {
-                if ( DateTime.Now.Hour == 0 && DateTime.Now.Minute == 0 )
-                    cachedUsers.Clear();
-                Thread.Sleep(60000);
-            }
+
+        TimerCallback tm = new TimerCallback((o) => { 
+            cachedUsers.Clear();
+            cachedDataContext.UnmuteWarnUsers();
         });
-        cachedDataReset.Start();
+
+        _timerUnmuteUsers = new Timer(tm, null, TimeSpan.FromMinutes(configurationContext.Configuration.UpdateDelay), TimeSpan.FromMinutes(configurationContext.Configuration.UpdateDelay));
     }
 
     public Task UpdateHandler(ITelegramBotClient client, Update update, CancellationToken cancellationToken)
