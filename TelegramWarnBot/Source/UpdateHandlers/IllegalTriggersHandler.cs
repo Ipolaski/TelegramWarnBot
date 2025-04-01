@@ -33,7 +33,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
 
     public override async Task<Task> Handle(UpdateContext context)
     {
-        if ( !context.AllowPost && !context.IsSenderAdmin && !context.UserDTO.WriteAllow)
+        if ( !context.AllowPost && !context.IsSenderAdmin && !context.UserDTO.WriteAllow && (context.Update.Message.Type == MessageType.Video || context.Update.Message.Type == MessageType.Photo))
         {
             await DeleteMessageAsync(context);
             var chatWarning = commandService.ResolveChatWarning(context.ChatDTO.Id);
