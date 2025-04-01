@@ -33,7 +33,7 @@ public class ResponseHelper : IResponseHelper
 		_deleteMessageTimer.AutoReset = true;
 		_deleteMessageTimer.Enabled = true;
 		_onDeleteQueue = new Queue<DeleteMessageModel>();
-		Log.Logger.Information( $"ResponseHelper сработал конструктор класса" );
+		//Log.Logger.Information( $"ResponseHelper сработал конструктор класса" );
 	}
 
     public async Task SendMessageAsync(ResponseContext responseContext, UpdateContext updateContext, int? replyToMessageId = null)
@@ -89,12 +89,12 @@ public class ResponseHelper : IResponseHelper
     }
 	private async Task ProcessDeleteMessage( object obj, ElapsedEventArgs e )
 	{
-        Log.Logger.Information("Сработал метод удаления сообщения");
+        //Log.Logger.Information("Сработал метод удаления сообщения");
 		while ( true )
 		{
 			if ( _onDeleteQueue == null || _onDeleteQueue.Count == 0 )
 			{
-				Log.Logger.Information( $"Пустое Queue. COUNT {_onDeleteQueue.Count}" );
+				//Log.Logger.Information( $"Пустое Queue. COUNT {_onDeleteQueue.Count}" );
 				break;
 			}
 			DeleteMessageModel deleteMessageModel = _onDeleteQueue.Peek();
