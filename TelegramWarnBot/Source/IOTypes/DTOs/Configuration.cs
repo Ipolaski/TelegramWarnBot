@@ -2,6 +2,10 @@
 
 public class Configuration
 {
+    /// <summary>
+    /// Количество дней для выхода из мута
+    /// </summary>
+    public int UnmuteUsersDelay { get; set; }
     public int UpdateDelay { get; set; }
     public int StatsDelay { get; set; }
     public int MaxWarnings { get; set; }

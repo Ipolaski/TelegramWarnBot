@@ -1,5 +1,6 @@
 ﻿{
-  "UpdateDelay": 60,
+  "UpdateDelay": 3,
+  "UnmuteUsersDelay": 60,
   "StatsDelay": 1,
   "MaxWarnings": 3,
   "DeleteWarnMessage": false,
