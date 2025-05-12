@@ -6,6 +6,7 @@ public class Configuration
     /// Количество дней для выхода из мута
     /// </summary>
     public int UnmuteUsersDelay { get; set; }
+    public int TimeMinuteSendUnWarnMessages { get; set; }
     public int UpdateDelay { get; set; }
     public int StatsDelay { get; set; }
     public int MaxWarnings { get; set; }
@@ -17,5 +18,6 @@ public class Configuration
     public string BOTUserName { get; set; }
     public int DeleteBotMessageTimeOutInSeconds { get; set; }
     public int TimeToAliveMessageInSeconds { get; set; }
+    public string HiddenChatId { get; set; }
     public Captions Captions { get; set; }
 }

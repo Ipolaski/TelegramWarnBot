@@ -86,6 +86,7 @@ public class TelegramBotClientProvider : ITelegramBotClientProvider
         client.StartReceiving(updateHandler, pollingErrorHandler,
                               new ReceiverOptions
                               {
+                                  ThrowPendingUpdates = true,
                                   AllowedUpdates = new[]
                                   {
                                       UpdateType.Message,
