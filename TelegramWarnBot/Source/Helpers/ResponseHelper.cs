@@ -9,6 +9,7 @@ public interface IResponseHelper
     string FormatResponseVariables(ResponseContext responseContext, UpdateContext updateContext);
     Task DeleteMessageAsync(UpdateContext context);
     Task SendMessageAsync(ResponseContext responseContext, UpdateContext updateContext, int? replyToMessageId = null);
+    Task SendToHiddenChatMessageAsync(ResponseContext responseContext);
 }
 
 public class ResponseHelper : IResponseHelper
@@ -45,6 +46,18 @@ public class ResponseHelper : IResponseHelper
                                                               replyToMessageId,
                                                               updateContext.CancellationToken);
             await MarkOnDeleteMrssage(message);
+        }
+        catch (Exception ex)
+        {
+            Log.Logger.Debug($"Error in ResponseHelper when try to reply on message: {ex}");
+        }
+    }
+
+    public async Task SendToHiddenChatMessageAsync(ResponseContext responseContext)
+    {
+        try
+        {
+            Message message = await telegramBotClientProvider.SendMessageAsync(configurationContext.Configuration.HiddenChatId, responseContext.Message);
         }
         catch (Exception ex)
         {
