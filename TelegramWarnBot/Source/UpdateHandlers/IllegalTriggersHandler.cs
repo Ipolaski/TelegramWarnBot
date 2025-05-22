@@ -54,23 +54,18 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
                 {
                     _warnMessageTimeout.Add(context.UserDTO.Id, DateTime.Now.AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages));
 
-                    return responseHelper.SendMessageAsync(new ResponseContext
-                    {
-                        MentionedUserId = context.UserDTO.Id,
-                        Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1", $"{context.UserDTO.FirstName} {context.UserDTO.LastName}"),
-                    }, context);
                 }
 
                 if (_warnMessageTimeout[context.UserDTO.Id].AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages) < DateTime.Now)
                 {
                     _warnMessageTimeout[context.UserDTO.Id] = DateTime.Now.AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages);
-
-                    return responseHelper.SendMessageAsync(new ResponseContext
+                }
+                string name = (context.UserDTO.Username == "@") ? context.UserDTO.GetName() : context.UserDTO.Username;
+                return responseHelper.SendMessageAsync(new ResponseContext
                     {
                         MentionedUserId = context.UserDTO.Id,
-                        Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1", $"{context.UserDTO.FirstName} {context.UserDTO.LastName}"),
+                        Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1", name),
                     }, context);
-                }
             }
         }
         else
