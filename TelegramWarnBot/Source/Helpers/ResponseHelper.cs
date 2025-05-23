@@ -44,7 +44,7 @@ public class ResponseHelper : IResponseHelper
             ChatId chatId = new ChatId(updateContext.ChatDTO.Id);
             Message message = await telegramBotClientProvider.SendMessageAsync(chatId,
                                                               FormatResponseVariables(responseContext, updateContext),
-                                                              replyToMessageId,
+                                                              null,
                                                               updateContext.CancellationToken);
             await MarkOnDeleteMrssage(message);
         }
@@ -58,7 +58,8 @@ public class ResponseHelper : IResponseHelper
     {
         try
         {
-            Message message = await telegramBotClientProvider.SendMessageAsync(configurationContext.Configuration.HiddenChatId, responseContext.Message);
+            ChatId chatId = new ChatId(long.Parse(configurationContext.Configuration.HiddenChatId));
+            Message message = await telegramBotClientProvider.SendMessageAsync(chatId, responseContext.Message);
         }
         catch (Exception ex)
         {
@@ -68,7 +69,9 @@ public class ResponseHelper : IResponseHelper
 
     public Task DeleteMessageAsync(UpdateContext context)
     {
-        return telegramBotClientProvider.DeleteMessageAsync(context.ChatDTO.Id,
+        ChatId chatId = new ChatId(context.ChatDTO.Id);
+
+        return telegramBotClientProvider.DeleteMessageAsync(chatId,
                                                             context.MessageId!.Value,
                                                             context.CancellationToken);
     }
@@ -118,8 +121,9 @@ public class ResponseHelper : IResponseHelper
             Log.Logger.Information($"Время сообщения: {deleteMessageModel.messageDate} время: {DateTime.Now}");
             if (deleteMessageModel.messageDate + TimeSpan.FromSeconds(configurationContext.Configuration.TimeToAliveMessageInSeconds) < DateTime.Now)
             {
-                Log.Logger.Information($"Удаление messageId {deleteMessageModel.MessageId!.Value}, ChatId: {deleteMessageModel.ChatId} ");
-                await telegramBotClientProvider.DeleteMessageAsync(deleteMessageModel.ChatId,
+                ChatId chatId = new ChatId(deleteMessageModel.ChatId);
+                Log.Logger.Information($"Удаление messageId {deleteMessageModel.MessageId!.Value}, ChatId: {chatId.Identifier} ");
+                await telegramBotClientProvider.DeleteMessageAsync(chatId,
                                                             deleteMessageModel.MessageId!.Value,
                                                             new CancellationToken());
                 DeleteMessageModel x = _onDeleteQueue.Dequeue();
