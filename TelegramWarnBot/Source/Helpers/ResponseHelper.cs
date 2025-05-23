@@ -39,32 +39,20 @@ public class ResponseHelper : IResponseHelper
 
     public async Task SendMessageAsync(ResponseContext responseContext, UpdateContext updateContext, int? replyToMessageId = null)
     {
-        try
-        {
             ChatId chatId = new ChatId(updateContext.ChatDTO.Id);
             Message message = await telegramBotClientProvider.SendMessageAsync(chatId,
                                                               FormatResponseVariables(responseContext, updateContext),
                                                               null,
                                                               updateContext.CancellationToken);
-            await MarkOnDeleteMrssage(message);
-        }
-        catch (Exception ex)
-        {
-            Log.Logger.Debug($"Error in ResponseHelper when try to reply on message: {ex}");
-        }
+            MarkOnDeleteMrssage(message);
+            Log.Logger.Debug($"Message: {message.Text}");
     }
 
     public async Task SendToHiddenChatMessageAsync(ResponseContext responseContext)
     {
-        try
-        {
-            ChatId chatId = new ChatId(long.Parse(configurationContext.Configuration.HiddenChatId));
-            Message message = await telegramBotClientProvider.SendMessageAsync(chatId, responseContext.Message);
-        }
-        catch (Exception ex)
-        {
-            Log.Logger.Debug($"Error in ResponseHelper when try to reply on message: {ex}");
-        }
+        ChatId chatId = new ChatId(long.Parse(configurationContext.Configuration.HiddenChatId));
+        Message message = await telegramBotClientProvider.SendMessageAsync(chatId, responseContext.Message);
+        Log.Logger.Debug($"Message: {message.Text}");
     }
 
     public Task DeleteMessageAsync(UpdateContext context)
@@ -90,25 +78,33 @@ public class ResponseHelper : IResponseHelper
 
     private MentionedUserDTO GetUserObject(long chatId, long? userId)
     {
+        MentionedUserDTO answer = new();
         UserDTO user = new();
         if (userId is not null)
             user = cachedDataContext.FindUserById(userId.Value);
 
         if (user is null)
-            return null;
-
-        var warnedUser = cachedDataContext.FindWarningByChatId(chatId)?
-            .WarnedUsers.Find(u => u.Id == userId);
-
-        return new MentionedUserDTO
         {
-            Id = user.Id,
-            FirstName = user?.FirstName,
-            LastName = user.LastName,
-            Username = user.Username,
-            Warnings = warnedUser?.Warnings
-        };
+            answer = null;
+        }
+        else
+        {
+            var warnedUser = cachedDataContext.FindWarningByChatId(chatId)?
+                .WarnedUsers.Find(u => u.Id == userId);
+
+            answer = new MentionedUserDTO
+            {
+                Id = user.Id,
+                FirstName = user?.FirstName,
+                LastName = user.LastName,
+                Username = user.Username,
+                Warnings = warnedUser?.Warnings
+            };
+        }
+
+        return answer;
     }
+
     private async Task ProcessDeleteMessage(object obj, ElapsedEventArgs e)
     {
         while (true)
@@ -135,7 +131,7 @@ public class ResponseHelper : IResponseHelper
         }
     }
 
-    public async Task MarkOnDeleteMrssage(Message message)
+    public void MarkOnDeleteMrssage(Message message)
     {
         if (message.From.Username == configurationContext.Configuration.BOTUserName)
         {
