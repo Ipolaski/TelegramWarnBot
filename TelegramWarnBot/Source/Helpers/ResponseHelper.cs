@@ -41,7 +41,8 @@ public class ResponseHelper : IResponseHelper
     {
         try
         {
-            Message message = await telegramBotClientProvider.SendMessageAsync(updateContext.ChatDTO.Id,
+            ChatId chatId = new ChatId(updateContext.ChatDTO.Id);
+            Message message = await telegramBotClientProvider.SendMessageAsync(chatId,
                                                               FormatResponseVariables(responseContext, updateContext),
                                                               replyToMessageId,
                                                               updateContext.CancellationToken);
@@ -114,10 +115,10 @@ public class ResponseHelper : IResponseHelper
                 break;
             }
             DeleteMessageModel deleteMessageModel = _onDeleteQueue.Peek();
-            Log.Logger.Information($"время сообщения: {deleteMessageModel.messageDate} время: {DateTime.Now}");
+            Log.Logger.Information($"Время сообщения: {deleteMessageModel.messageDate} время: {DateTime.Now}");
             if (deleteMessageModel.messageDate + TimeSpan.FromSeconds(configurationContext.Configuration.TimeToAliveMessageInSeconds) < DateTime.Now)
             {
-                Log.Logger.Information($"удаление messageId {deleteMessageModel.MessageId!.Value}, ChatId: {deleteMessageModel.ChatId} ");
+                Log.Logger.Information($"Удаление messageId {deleteMessageModel.MessageId!.Value}, ChatId: {deleteMessageModel.ChatId} ");
                 await telegramBotClientProvider.DeleteMessageAsync(deleteMessageModel.ChatId,
                                                             deleteMessageModel.MessageId!.Value,
                                                             new CancellationToken());
@@ -134,7 +135,7 @@ public class ResponseHelper : IResponseHelper
     {
         if (message.From.Username == configurationContext.Configuration.BOTUserName)
         {
-            Log.Logger.Information($"добавление сообщения в  очередь на удаление MessageId: {message.MessageId} messageDate: {DateTime.Now} ChatId: {message.Chat.Id}");
+            Log.Logger.Information($"Добавление сообщения в  очередь на удаление MessageId: {message.MessageId} messageDate: {DateTime.Now} ChatId: {message.Chat.Id}");
             var deleteMessageModel = new DeleteMessageModel()
             {
                 MessageId = message.MessageId,
@@ -142,7 +143,7 @@ public class ResponseHelper : IResponseHelper
                 ChatId = message.Chat.Id
             };
             _onDeleteQueue.Enqueue(deleteMessageModel);
-            Log.Logger.Information($"Пустое Queue  . COUNT {_onDeleteQueue.Count}");
+            Log.Logger.Information($"Пустое Queue. COUNT: {_onDeleteQueue.Count}");
         }
     }
 }

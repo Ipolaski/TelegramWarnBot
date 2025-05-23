@@ -53,7 +53,6 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
                 if (!_warnMessageTimeout.ContainsKey(context.UserDTO.Id))
                 {
                     _warnMessageTimeout.Add(context.UserDTO.Id, DateTime.Now.AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages));
-
                 }
 
                 if (_warnMessageTimeout[context.UserDTO.Id].AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages) < DateTime.Now)
@@ -61,6 +60,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
                     _warnMessageTimeout[context.UserDTO.Id] = DateTime.Now.AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages);
                 }
                 string name = (context.UserDTO.Username == "@") ? context.UserDTO.GetName() : context.UserDTO.Username;
+
                 return responseHelper.SendMessageAsync(new ResponseContext
                     {
                         MentionedUserId = context.UserDTO.Id,
