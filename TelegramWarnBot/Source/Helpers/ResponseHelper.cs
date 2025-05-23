@@ -45,14 +45,17 @@ public class ResponseHelper : IResponseHelper
                                                               null,
                                                               updateContext.CancellationToken);
             MarkOnDeleteMrssage(message);
-            Log.Logger.Debug($"Message: {message.Text}");
+            //Log.Logger.Debug($"Message: {message.Text}");
     }
 
+    /// <summary>
+    /// Отправляет сообщение в группу для отслеживания пользователей, которые могут получить бан.
+    /// </summary>
     public async Task SendToHiddenChatMessageAsync(ResponseContext responseContext)
     {
         ChatId chatId = new ChatId(long.Parse(configurationContext.Configuration.HiddenChatId));
         Message message = await telegramBotClientProvider.SendMessageAsync(chatId, responseContext.Message);
-        Log.Logger.Debug($"Message: {message.Text}");
+        //Log.Logger.Debug($"Message: {message.Text}");
     }
 
     public Task DeleteMessageAsync(UpdateContext context)
@@ -114,7 +117,7 @@ public class ResponseHelper : IResponseHelper
                 break;
             }
             DeleteMessageModel deleteMessageModel = _onDeleteQueue.Peek();
-            Log.Logger.Information($"Время сообщения: {deleteMessageModel.messageDate} время: {DateTime.Now}");
+            //Log.Logger.Information($"Время сообщения: {deleteMessageModel.messageDate} время: {DateTime.Now}");
             if (deleteMessageModel.messageDate + TimeSpan.FromSeconds(configurationContext.Configuration.TimeToAliveMessageInSeconds) < DateTime.Now)
             {
                 ChatId chatId = new ChatId(deleteMessageModel.ChatId);
