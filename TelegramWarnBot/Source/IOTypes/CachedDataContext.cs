@@ -13,6 +13,7 @@ public interface ICachedDataContext
     UserDTO CacheUser(User user);
 
     void SaveData();
+    void UnmuteWarnUsers();
     Task SaveRegisteredChatsAsync(List<long> registeredChats);
 
     ChatDTO FindChatById(long id);
@@ -142,6 +143,21 @@ public class CachedDataContext : IOContextBase, ICachedDataContext
                 await SaveIllegalAsync();
             }
         }, cancellationToken);
+    }
+
+    public void UnmuteWarnUsers()
+    {
+        foreach (var chat in Warnings)
+        {
+            foreach (var user in chat.WarnedUsers)
+            {
+                if(user.Unmute < DateTime.Now)
+                {
+                    user.Warnings = 0;
+                    user.Unmute = null;
+                }
+            }
+        }
     }
 
     public void SaveData()

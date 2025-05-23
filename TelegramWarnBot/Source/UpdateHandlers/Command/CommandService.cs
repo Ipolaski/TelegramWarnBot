@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace TelegramWarnBot;
 
@@ -25,39 +26,78 @@ public class CommandService : ICommandService
 {
     private readonly ICachedDataContext cachedDataContext;
     private readonly IChatHelper chatHelper;
+    private readonly IResponseHelper responseHelper;
     private readonly IConfigurationContext configurationContext;
     private readonly ITelegramBotClientProvider telegramBotClientProvider;
 
     public CommandService(ITelegramBotClientProvider telegramBotClientProvider,
                           IConfigurationContext configurationContext,
                           ICachedDataContext cachedDataContext,
+                          IResponseHelper responseHelper,
                           IChatHelper chatHelper)
     {
         this.telegramBotClientProvider = telegramBotClientProvider;
         this.configurationContext = configurationContext;
         this.cachedDataContext = cachedDataContext;
         this.chatHelper = chatHelper;
+        this.responseHelper = responseHelper;
+        _warnMessageTimeout = new();
     }
-
+    private Dictionary<long, DateTime> _warnMessageTimeout;
     /// <summary>
     /// Выдача предупреждений всем, кроме админов и автобан, если предупреждения доходят до порогового значения "MaxWarnings"
     /// </summary>
     /// <returns>Был ли забанен пользователь</returns>
     public async Task<bool> Warn(WarnedUser warnedUser, long chatId, bool tryBanUser, UpdateContext context)
     {
-        warnedUser.Warnings = Math.Clamp(warnedUser.Warnings + 1, 0,
-                                         configurationContext.Configuration.MaxWarnings);
 
-        // If not reached max warnings 
-        if (warnedUser.Warnings < configurationContext.Configuration.MaxWarnings)
-            return false;
+        string name = (context.UserDTO.Username == "@") ? context.UserDTO.GetName() : context.UserDTO.Username;
 
         // Max warnings reached
 
+        if (!_warnMessageTimeout.ContainsKey(context.UserDTO.Id))
+        {
+            _warnMessageTimeout.Add(context.UserDTO.Id, DateTime.Now.AddSeconds(configurationContext.Configuration.TimeMinuteSendUnWarnMessages));
+
+            warnedUser.Warnings = Math.Clamp(warnedUser.Warnings + 1, 0,
+                                         configurationContext.Configuration.MaxWarnings);
+
+            warnedUser.Unmute = DateTime.Now.AddDays(configurationContext.Configuration.UnmuteUsersDelay);
+
+            // If not reached max warnings 
+            if (warnedUser.Warnings < configurationContext.Configuration.MaxWarnings)
+                return false;
+
+            
+            await responseHelper.SendToHiddenChatMessageAsync(new ResponseContext
+            {
+                Message = configurationContext.Configuration.Captions.ServiceMessage.Replace("%1", name).Replace("%2", warnedUser.Warnings.ToString()).Replace("%3", warnedUser.Unmute.ToString())
+        });
+        }
+
+        else if (_warnMessageTimeout[context.UserDTO.Id].AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages) < DateTime.Now)
+        {
+            _warnMessageTimeout[context.UserDTO.Id] = DateTime.Now.AddSeconds(configurationContext.Configuration.TimeMinuteSendUnWarnMessages);
+
+            warnedUser.Warnings = Math.Clamp(warnedUser.Warnings + 1, 0,
+                                         configurationContext.Configuration.MaxWarnings);
+
+            warnedUser.Unmute = DateTime.Now.AddDays(configurationContext.Configuration.UnmuteUsersDelay);
+
+            // If not reached max warnings 
+            if (warnedUser.Warnings < configurationContext.Configuration.MaxWarnings)
+                return false;
+
+            await responseHelper.SendToHiddenChatMessageAsync(new ResponseContext
+            {
+                Message = configurationContext.Configuration.Captions.ServiceMessage.Replace("%1", name).Replace("%2", warnedUser.Warnings.ToString()).Replace("%3", warnedUser.Unmute.ToString())
+            });
+        }
+
         if (tryBanUser)
         {
-            await telegramBotClientProvider.BanChatMemberAsync(chatId, warnedUser.Id,
-                                                               context.CancellationToken);
+            // await telegramBotClientProvider.BanChatMemberAsync(chatId, warnedUser.Id,
+            //                                                    context.CancellationToken);
             warnedUser.Warnings = 0;
             return true;
         }
@@ -126,7 +166,6 @@ public class CommandService : ICommandService
         return true;
     }
 
-
     /// <returns>
     ///     Разрешение или запрет бесконечного ввода сообщений
     /// </returns>
@@ -191,7 +230,6 @@ public class CommandService : ICommandService
 
         return true;
     }
-
 
     public WarnedUser ResolveWarnedUser(long userId, ChatWarnings chatWarning)
     {

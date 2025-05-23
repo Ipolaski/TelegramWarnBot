@@ -29,24 +29,44 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
         this.responseHelper = responseHelper;
         this.commandService = commandService;
         this.logger = logger;
+        _warnMessageTimeout = new();
     }
+
+    private Dictionary<long, DateTime> _warnMessageTimeout;
 
     public override async Task<Task> Handle(UpdateContext context)
     {
-        if ( !context.AllowPost && !context.IsSenderAdmin && !context.UserDTO.WriteAllow)
+        if ( !context.AllowPost && !context.IsSenderAdmin && !context.UserDTO.WriteAllow && (context.Update.Message.Type == MessageType.Video || context.Update.Message.Type == MessageType.Photo))
         {
-            await DeleteMessageAsync(context);
+            if (configurationContext.Configuration.DeleteWarnMessage)
+                await DeleteMessageAsync(context);
+
             var chatWarning = commandService.ResolveChatWarning(context.ChatDTO.Id);
             var warnedUser = commandService.ResolveWarnedUser(context.UserDTO.Id, chatWarning);
             var isBanned = await commandService.Warn(warnedUser,
                                                                  chatWarning.ChatId,
-                                                                 !context.IsSenderAdmin,
+                                                                 false,
                                                                  context);
 
-            return responseHelper.SendMessageAsync(new ResponseContext
+            if (warnedUser.Warnings >= 1)
             {
-                Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1",$"{context.UserDTO.Username}"),
-            }, context);
+                if (!_warnMessageTimeout.ContainsKey(context.UserDTO.Id))
+                {
+                    _warnMessageTimeout.Add(context.UserDTO.Id, DateTime.Now.AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages));
+                }
+
+                if (_warnMessageTimeout[context.UserDTO.Id].AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages) < DateTime.Now)
+                {
+                    _warnMessageTimeout[context.UserDTO.Id] = DateTime.Now.AddMinutes(configurationContext.Configuration.TimeMinuteSendUnWarnMessages);
+                }
+                string name = (context.UserDTO.Username == "@") ? context.UserDTO.GetName() : context.UserDTO.Username;
+
+                return responseHelper.SendMessageAsync(new ResponseContext
+                    {
+                        MentionedUserId = context.UserDTO.Id,
+                        Message = configurationContext.Configuration.Captions.OnlyOneFreeMessagePerAccount.Replace("%1", name),
+                    }, context);
+            }
         }
         else
         {
@@ -68,7 +88,7 @@ public class IllegalTriggersHandler : Pipe<UpdateContext>
                                       context.UserDTO.GetName(),
                                       context.ChatDTO.Name);
 
-                await NotifyAdminsAsync(context, trigger);
+                // await NotifyAdminsAsync(context, trigger);
 
                 if ( trigger.DeleteMessage )
                     await DeleteMessageAsync(context);

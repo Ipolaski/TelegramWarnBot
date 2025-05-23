@@ -1,5 +1,7 @@
 ﻿{
   "UpdateDelay": 60,
+  "TimeMinuteSendUnWarnMessages": 1,
+  "UnmuteUsersDelay": 2,
   "StatsDelay": 1,
   "MaxWarnings": 3,
   "DeleteWarnMessage": false,
@@ -7,6 +9,10 @@
   "DeleteLinksFromNewMembers": true,
   "NewMemberStatusFromHours": 24,
   "AllowAdminWarnings": true,
+  "BOTUserName": "korall56_bot",
+  "DeleteBotMessageTimeOutInSeconds": 60,
+  "TimeToAliveMessageInSeconds": 60,
+  "HiddenChatId": "-1002537665979",
   "Captions": {
     "OnBotJoinedChatMessage": "👋 Hello there!\nPlease dial @robin\\\\_thicke to register this chat...",
     "ChatNotRegistered": "☠️ This chat is not registered...\nPlease dial @robin\\\\_thicke for more info...",
@@ -33,6 +39,7 @@
     "WCountAdminAttempt": "😇 The admins of this chat are holy men...",
     "WCountBotAttempt": "😇 What do you mean? My bot's are holy!",
     "WCountBotSelfAttempt": "😇 Well, I'm holy!",
-    "OnlyOneFreeMessagePerAccount": "%1, к сожалению, вы уже разместили вашу рекламу сегодня! \nБолее 1 раза размещение в группе ПЛАТНО. \n👉@Ksy56orenb\nПри повторных нарушениях вы будете забанены на 30 дней."
+    "OnlyOneFreeMessagePerAccount": "%1, к сожалению, вы уже разместили вашу рекламу сегодня! \nБолее 1 раза размещение в группе ПЛАТНО. \n👉@Ksy56orenb\nПри повторных нарушениях вы будете забанены на 30 дней.",
+    "ServiceMessage": "@%1, получил предупреждений: %2! \nСброс предупреждений произойдёт %3. Кандидат на блокировку"
   }
 }

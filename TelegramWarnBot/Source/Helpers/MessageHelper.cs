@@ -17,10 +17,15 @@ public class MessageHelper : IMessageHelper
 
     public bool MatchMessage(IEnumerable<string> matchFromMessages, bool matchWholeMessage, bool matchCase, string message)
     {
-        if (matchWholeMessage)
-            return matchFromMessages.Any(m => matchCase ? m == message : string.Equals(m, message, StringComparison.CurrentCultureIgnoreCase));
-
-        return matchFromMessages.Any(m => message.Contains(m, matchCase ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase));
+        bool result = false;
+        if (!string.IsNullOrEmpty(message))
+        {
+            if (matchWholeMessage)
+                result = matchFromMessages.Any(m => matchCase ? m == message : string.Equals(m, message, StringComparison.CurrentCultureIgnoreCase));
+            var matchMessages = matchFromMessages?.Any(m => message.Contains(m, matchCase ? StringComparison.CurrentCulture : StringComparison.CurrentCultureIgnoreCase));
+            result = matchMessages ?? false;
+        }
+        return result;
     }
 
     public bool MatchLinkMessage(Message message)
