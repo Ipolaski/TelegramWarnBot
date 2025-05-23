@@ -5,6 +5,16 @@
 <p align="center">
   Telegram Warn Bot made with C# and &hearts; by Geras1mleo
 </p>
+<h3>Описание параметров конфигурации:</h3>
+<p>
+  [TimeMinuteSendUnWarnMessages] - сколько минут даётся пользователю для публикации постов, перед тем, как начнёт проверятся количество сделаных им публикаций картинок
+</p>
+<p>
+  [DeleteBotMessageTimeOutInSeconds] и [TimeToAliveMessageInSeconds] - время до удаления сообщения от бота и время таймера проверки на удаление сообщений бота
+</p>
+<p>
+  [HiddenChatId] - чат в который будет отправляться сообщение о пользователе, которому будет выдан бан из-за большого количества предпредений
+</p>
 
 ## What can I do?
 ### I am a bot-moderator...
